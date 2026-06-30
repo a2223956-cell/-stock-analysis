@@ -1,0 +1,32 @@
+# 敏感文件
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+
+# GitHub tokens
+.github_pat
+ghp_*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
