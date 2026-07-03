@@ -11,10 +11,11 @@
 
 1. **市场环境先行** — 每次分析必先扫描大盘+板块+北向资金，为个股提供参照系
 2. **量价关系为王** — 通过逐日K线+成交量判断主力建仓/洗盘/拉升/出货
-3. **每个判断必须有K线实例** — 不能空口说结论
-4. **资金流只是验证** — 量价才是主力真实意图
-5. **综合评分体系** — 量价30%+技术25%+资金20%+消息15%+估值10%
-6. **风险一票否决** — high级风险直接降为卖出
+3. **K线组合形态** — 7种组合形态检测(双针探底/十字星确认/看涨吞没等) + 信号失效判定
+4. **每个判断必须有K线实例** — 不能空口说结论
+5. **资金流只是验证** — 量价才是主力真实意图
+6. **综合评分体系** — 量价30%+技术25%+资金20%+消息15%+估值10%
+7. **风险一票否决** — high级风险直接降为卖出
 
 ## 分析流程
 
@@ -28,101 +29,34 @@
 | ② 资金流向 | 主力/散户/超大单20日逐日 | 东财push2his |
 | ③ 均线技术 | MA5/10/20/30+偏离度+排列 | K线计算 |
 | ④ 估值基本面 | PE/PB/PEG+财务数据+机构预期 | 腾讯+akshare+东财研报 |
-| ⑤ 消息风险 | 5源新闻情绪+风险筛查 | news_analysis.py |
+| ④.5 概念板块 | 完整概念映射+核心vs蹭概念 | 同花顺+东财 |
+| ⑤ 消息面 | 5源新闻+情绪打分+风险筛查 | news_analysis.py |
 
-### 市场环境模块(V2.0新增)
+## 版本历史
 
-分析个股前必先获取：
-- **大盘指数**: 上证/深证/创业板/科创50 (腾讯API批量)
-- **北向资金**: 沪股通/深股通当日净流入 (同花顺hsgtApi)
-- **概念板块**: 涨幅TOP15+跌幅TOP5 (东财API)
-- **行业板块**: 涨幅TOP10 (东财API)
-- **个股vs板块**: 所属板块今日涨跌 vs 个股涨跌 → 判断强弱
-
-影响规则:
-- 大盘强+板块强+个股强 → 🟢 独立强势
-- 大盘弱+板块弱+个股弱 → 🔴 系统性风险
-- 大盘弱+板块强 → 独立行情，警惕补跌
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| V2.0 | 2026-07-03 | K线组合形态规则(7种) + 市场环境扫描 + 板块分析模板 + 单股分析强制要求 |
+| V1.0 | 2026-06-22 | 初始版本: 6步分析法 + 评分体系 + 输出模板 |
 
 ## 文件结构
 
 ```
-├── README.md                    # 本文件
-├── .gitignore                   # 防止敏感文件提交
-├── SKILL.md                     # 完整分析方法论(Hermes skill格式, ~1600行)
-├── strategies/                  # daily_stock_analysis 16个可插拔策略
-│   ├── bull_trend.yaml          # 默认多头趋势
-│   ├── shrink_pullback.yaml     # 缩量回踩
-│   ├── ma_golden_cross.yaml     # 均线金叉
-│   ├── volume_breakout.yaml     # 放量突破
-│   ├── dragon_head.yaml         # 龙头策略
-│   ├── bottom_volume.yaml       # 底部放量
-│   ├── box_oscillation.yaml     # 箱体震荡
-│   ├── chan_theory.yaml          # 缠论
-│   ├── wave_theory.yaml          # 波浪理论
-│   ├── emotion_cycle.yaml        # 情绪周期
-│   ├── event_driven.yaml         # 事件驱动
-│   ├── hot_theme.yaml            # 热点题材
-│   ├── growth_quality.yaml       # 成长质量
-│   ├── expectation_repricing.yaml # 预期重估
-│   ├── one_yang_three_yin.yaml   # 一阳夹三阴
-│   └── README.md                 # 策略编写指南
-├── references/                  # 参考文档(V2.0新增)
-│   ├── tencent-api-fields.md    # 腾讯行情API字段映射
-│   ├── eastmoney-api.md         # 东财K线/资金流API参考
-│   ├── daily_stock_analysis_framework.md # 16策略YAML详情
-│   ├── serenity-bottleneck-framework.md  # Serenity瓶颈投资法
-│   ├── stock-code-lookup.md     # 股票代码查询+易混淆表
-│   ├── mlcc-sector-mapping.md   # MLCC产业链图谱
-│   ├── glass-substrate-tgv-industry.md # TGV玻璃基板产业链
-│   └── tgv-glass-substrate-map.md      # 半导体TGV图谱
-└── templates/                   # 输出模板
-    ├── stock_report.md           # 个股分析报告模板
-    ├── market_review.md          # 大盘复盘模板
-    └── comparison.md             # 多票横向对比模板
+SKILL.md                    # 主分析框架(V2.0)
+references/
+  tencent-api-fields.md     # 腾讯API字段映射
+  eastmoney-api.md          # 东财API参考
+  stock-code-lookup.md      # 股票代码查询
+  market-data-api.md        # 市场环境数据端点
+  daily_stock_analysis_framework.md  # 16个策略YAML详情
+  serenity-bottleneck-framework.md   # Serenity瓶颈投资法
+  mlcc-sector-mapping.md    # MLCC产业链图谱
+  glass-substrate-tgv-industry.md    # TGV玻璃基板产业链
+  tgv-glass-substrate-map.md         # TGV产业链分层
+strategies/                 # 14个策略YAML
+templates/                  # 输出模板
 ```
 
-## 7条核心交易理念
+## 免责声明
 
-1. 严进策略 — 乖离率<5%才考虑入场
-2. 趋势交易 — 多头排列顺势而为
-3. 效率优先 — 关注筹码结构好的票
-4. 买点偏好 — MA5/MA10回踩买入
-5. 风险排查 — 高风险一票否决
-6. 量价配合 — 成交量验证价格运动
-7. 龙头放宽 — 龙头股可适当放宽标准
-
-## 版本历史
-
-### V2.0 (2026-06-30)
-- 新增步骤0.5: 市场环境扫描(大盘+板块+北向+个股vs板块强弱)
-  - 6个数据获取模块(A-F)
-  - 市场环境对个股分析的影响规则矩阵
-- 标准输出模板新增"0、市场环境"板块
-- 子agent委托模板新增市场环境扫描为第0步
-- 同步references/目录(8个参考文档)
-- 添加.gitignore防止敏感文件提交
-
-### V1.0 (初始版本)
-- 5步分析法: 量价→资金→均线→估值→消息
-- 7条核心交易理念
-- 综合评分体系(量价30%+技术25%+资金20%+消息15%+估值10%)
-- 16个可插拔策略YAML
-- 3个输出模板
-
-## 回滚方法
-
-```bash
-# 查看所有版本
-git tag -l
-
-# 回滚到指定版本
-git checkout v1.0
-
-# 基于某个版本建新分支
-git checkout -b hotfix v1.0
-```
-
-## License
-
-MIT
+本框架仅供学习和研究使用，不构成投资建议。股市有风险，投资需谨慎。
