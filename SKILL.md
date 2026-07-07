@@ -61,7 +61,7 @@ category: finance
 **操作**:
 1. 搜索历史报告:
    ```bash
-   search_files(pattern="{股票名}_{代码}_*分析报告*", target="files", path="/home/harry")
+   search_files(pattern="*分析报告*", target="files", path="/home/harry/stock-reports/{股票名}_{代码}")
    ```
    + `session_search(query="{股票名} {代码} 分析")`
 
@@ -1307,7 +1307,7 @@ for (lo,hi), label in zip(bins, labels):
 
 分析顺序:
   ⚠️ ⓾ 历史复盘(必做!先检查是否有历史分析报告):
-    - search_files(pattern="{股票名}_{代码}_*分析报告*", path="/home/harry")
+    - search_files(pattern="*分析报告*", path="/home/harry/stock-reports/{股票名}_{代码}")
     - 如果有: 读取上次结论，对比当前数据，验证对错，找出遗漏
     - 输出: "== 历史复盘: {股票名}({代码}) =="
     - 如果没有: 跳过，正常开始
@@ -1319,7 +1319,7 @@ for (lo,hi), label in zip(bins, labels):
   ⑤ 消息面+风险筛查
 
 ⚠️ 必须将完整报告保存到文件(主agent需要读取文件呈现给用户):
-  save_path = f"/home/harry/{股票名}_{代码}_深度分析报告_{YYYYMMDD}.md"
+  save_path = f"/home/harry/stock-reports/{股票名}_{代码}/{股票名}_{代码}_深度分析报告_{YYYYMMDD}.md"
   用write_file保存完整报告(按标准模板格式)
   ⚠️ 文件后缀必须是.md,不是.txt
   不要只返回摘要——主agent依赖文件内容来呈现完整报告给用户
@@ -1573,13 +1573,13 @@ url = f'https://qt.gtimg.cn/q={codes}'
 emoji标记结论（🔴不推荐/🟡观望/🟢推荐）。
 对比表用等宽字符对齐。
 
-**报告文件格式**: 分析报告统一用 `.md` 后缀，文件名格式: `{股票名}_{代码}_深度分析报告_{日期}.md`，保存到 `/home/harry/` 目录。
+**报告文件格式**: 分析报告统一用 `.md` 后缀，保存到 `/home/harry/stock-reports/{股票名}_{代码}/` 目录。
 
 ### 分析报告文件格式
 报告保存为 `.md` 后缀（不是.txt），文件名格式:
 `{股票名}_{代码}_深度分析报告_{YYYYMMDD}.md`
-保存路径: `/home/harry/`
-示例: `/home/harry/彤程新材_603650_深度分析报告_20260701.md`
+保存路径: `/home/harry/stock-reports/{股票名}_{代码}/`
+示例: `/home/harry/stock-reports/彤程新材_603650/彤程新材_603650_深度分析报告_20260701.md`
 
 ### 东财API有频率限制，批量查询需间隔
 ⚠️ 2026-06-18 教训: 对6只票连续调用东财push2his K线+资金流API(约15次请求)，
