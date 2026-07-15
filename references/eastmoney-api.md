@@ -95,9 +95,24 @@ https://push2.eastmoney.com/api/qt/slist/get
 
 ## ⚠️ 需要unset代理
 
-所有东财API请求前需unset代理:
+所有东财API请求前需unset代理。**关键区别：Python-level unset不可靠，必须用shell-level unset：**
+
 ```python
+# ❌ execute_code中Python-level unset不生效:
 import os
 for k in ['http_proxy','https_proxy','HTTP_PROXY','HTTPS_PROXY']:
     os.environ.pop(k, None)
+# execute_code的Python进程仍可能走代理, push2his会RemoteDisconnected
+
+# ✅ 必须用terminal + shell-level unset:
+# unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY && python3 -c "..."
+# 或在terminal()中执行unset + Python脚本
 ```
+
+**实测(2026-07-01):** execute_code中即使用`os.environ.pop()`清除了所有代理环境变量,
+东财push2his K线API和资金流API仍报RemoteDisconnected。
+改用terminal + shell-level `unset`后正常。
+腾讯API(`qt.gtimg.cn`)不受代理影响(走了不同路由)。
+
+**结论:** 东财push2his相关API(K线/资金流)必须通过`terminal()`执行并先`unset`,
+不要放在`execute_code()`中。mootdx(TCP协议)不受HTTP代理影响。
