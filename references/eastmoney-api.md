@@ -79,11 +79,30 @@ field[1]原始值单位是**元(元)**，不是万元也不是亿元！
 
 ## 概念板块API
 
-### 接口
+### 接口(push2 slist)
 ```
 https://push2.eastmoney.com/api/qt/slist/get
 ```
 或用腾讯API的F10数据。
+
+### 接口(东财datacenter — 更稳定的备用方案)
+```
+https://datacenter.eastmoney.com/securities/api/data/v1/get?reportName=RPT_F10_CORETHEME_BOARDTYPE&columns=SECURITY_CODE,BOARD_NAME,BOARD_RANK,BOARD_CODE,IS_PRECISE,BOARD_TYPE&quoteColumns=&filter=(SECURITY_CODE=%22{代码}%22)&pageNumber=1&pageSize=50&sortTypes=-1&sortColumns=BOARD_RANK&source=HSF10&client=PC
+```
+返回字段:
+- BOARD_NAME: 概念名称
+- BOARD_CODE: 板块代码
+- BOARD_TYPE: 类型(板块/行业)
+- BOARD_RANK: 排名
+
+⚠️ 2026-07-16实测: push2 slist API返回空时，此datacenter API仍成功返回22个概念标签。
+需要Referer: `https://emweb.securities.eastmoney.com/`
+
+### 接口(东财reportapi — 研报/评级)
+```
+https://reportapi.eastmoney.com/report/list?industryCode=*&pageNo=1&pageSize=5&beginTime=2025-01-01&endTime=2026-12-31&code={代码}
+```
+⚠️ 2026-07-16实测: WSL环境下持续返回HTTP 500。降级方案: web_search搜索研报信息。
 
 ## ⚠️ 频率限制
 
@@ -95,24 +114,29 @@ https://push2.eastmoney.com/api/qt/slist/get
 
 ## ⚠️ 需要unset代理
 
-所有东财API请求前需unset代理。**关键区别：Python-level unset不可靠，必须用shell-level unset：**
+所有东财API请求前需unset代理。**推荐方式: 使用em_api.py脚本(subprocess+curl):**
 
+```bash
+# ✅ 推荐: em_api.py脚本自动处理代理和限频
+python3 ~/.hermes/scripts/em_api.py fund_flow <secid> [limit]
+python3 ~/.hermes/scripts/em_api.py kline <secid> [limit]
+python3 ~/.hermes/scripts/em_api.py concept_top [limit]
+```
+
+**备选: terminal + shell-level unset:**
+```bash
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY && python3 -c "..."
+```
+
+**❌ 不可用: execute_code + Python-level unset:**
 ```python
-# ❌ execute_code中Python-level unset不生效:
+# execute_code中Python-level unset不生效:
 import os
 for k in ['http_proxy','https_proxy','HTTP_PROXY','HTTPS_PROXY']:
     os.environ.pop(k, None)
-# execute_code的Python进程仍可能走代理, push2his会RemoteDisconnected
-
-# ✅ 必须用terminal + shell-level unset:
-# unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY && python3 -c "..."
-# 或在terminal()中执行unset + Python脚本
+# push2his仍会RemoteDisconnected
 ```
 
-**实测(2026-07-01):** execute_code中即使用`os.environ.pop()`清除了所有代理环境变量,
-东财push2his K线API和资金流API仍报RemoteDisconnected。
-改用terminal + shell-level `unset`后正常。
-腾讯API(`qt.gtimg.cn`)不受代理影响(走了不同路由)。
-
-**结论:** 东财push2his相关API(K线/资金流)必须通过`terminal()`执行并先`unset`,
-不要放在`execute_code()`中。mootdx(TCP协议)不受HTTP代理影响。
+**实测(2026-07-21):** em_api.py(subprocess+curl直连)是WSL环境下最可靠的方案。
+curl直连(不走代理)100%成功,但有限频(间隔>=5秒)。
+requests库的代理处理在WSL+Clash环境下有bug,即使unset也会失败。
