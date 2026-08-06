@@ -509,10 +509,16 @@ def main():
         report_dir = os.path.expanduser("~/stock-reports")
         prev_report = None
         if os.path.exists(report_dir):
-            for f in sorted(os.listdir(report_dir), reverse=True):
-                if code in f and f.endswith(".md"):
-                    prev_report = os.path.join(report_dir, f)
-                    break
+            # 搜索子目录(如 许继电气_000400/)
+            stock_name = result.get("name", "")
+            for d in os.listdir(report_dir):
+                if code in d or stock_name in d:
+                    sub_dir = os.path.join(report_dir, d)
+                    if os.path.isdir(sub_dir):
+                        reports = sorted([f for f in os.listdir(sub_dir) if f.endswith(".md") and "深度分析" in f], reverse=True)
+                        if reports:
+                            prev_report = os.path.join(sub_dir, reports[0])
+                            break
         result["prev_report"] = prev_report
         if prev_report:
             print(f"  ✓ 找到上次报告: {os.path.basename(prev_report)}")
