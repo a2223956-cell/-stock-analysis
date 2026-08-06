@@ -7,7 +7,7 @@ version: "3.1.0"
 updated: "2026-07-27"
 ---
 
-# 股票综合分析框架 V3.0
+# 股票综合分析框架 V3.1.0
 
 > 融合两套系统精华：
 > - Hermes量价分析：深度K线量价关系解读、5源新闻情绪、主力行为逐K线追踪
@@ -31,19 +31,22 @@ updated: "2026-07-27"
 
 ### 数据采集脚本
 
-深度分析数据采集器: `scripts/deep_analysis.py`
+深度分析数据采集器: 
 
 ```bash
-# 10步模板数据采集(输出JSON)
-~/.venv/bin/python3 scripts/deep_analysis.py <股票代码> [名称]
+python3 ~/.hermes/skills/stock-analysis/scripts/deep_analysis.py <股票代码> [股票名称]
 # 输出: /tmp/deep_analysis_<code>.json
 ```
+
+⚠️ deep_analysis.py是数据采集器,输出原始数据JSON。分析结论由agent基于JSON数据撰写。脚本不做最终判断。
 
 脚本强制执行10步数据采集:
 1.核心数据速览 2.历史复盘 3.市场环境 4.量价关系 5.资金流向
 6.均线技术 7.估值基本面 8.综合评分 9.风险提示 10.附录
 
 ⚠️ 每次深度分析必须先运行此脚本,禁止跳步。
+
+
 
 
 **⚠️ 执行前置要求: 接到分析任务后，第一步必须告知用户将调用哪些skill，再开始执行。例如: "计划调用的skill: 1.stock-analysis 2.a-stock-data 3.mx-moni"。用户明确要求每次做事前先看到skill列表。**
@@ -388,6 +391,8 @@ url = "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=1&po=1&np=1&fields=f
 
 **目标**: 用资金流数字验证量价判断是否准确
 
+**数据源**: 使用东财API直连(push2his.eastmoney.com),带镜像重试(3个域名)。deep_analysis.py中fetch_eastmoney_fund_flow()已内置此逻辑。
+
 - 主力资金连续净流入 → 印证建仓/拉升判断
 - 主力资金连续净流出 → 印证出货判断
 - 量价说建仓但资金在流出 → 判断可能有误，需重新审视
@@ -421,6 +426,8 @@ url = "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=1&po=1&np=1&fields=f
 - 换手率: >10%异常活跃 / <1%冷门
 
 ### 步骤6: 情绪周期分析
+
+⚠️ 情绪周期由agent基于市场观察手工判断,deep_analysis.py不采集情绪数据。
 
 **核心哲学**: 市场参与者的情绪在"恐慌→悲观→怀疑→希望→乐观→兴奋→贪婪→狂热"之间循环。聪明钱在恐慌底部布局，在狂热顶部离场。
 
@@ -461,6 +468,8 @@ url = "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=1&po=1&np=1&fields=f
 ---
 
 ### 步骤7: 估值+基本面
+
+⚠️ deep_analysis.py只采集PE/PB/市值等基础数据。PEG/预期差/机构预期等深度估值分析由agent完成。
 
 **估值检查**:
 - PE(TTM) vs 行业均值
@@ -603,6 +612,7 @@ url = "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=1&po=1&np=1&fields=f
 | 技术面 | 25% | 均线排列+趋势强度+关键位 |
 | 资金面 | 20% | 主力资金流向验证 |
 | 消息面 | 15% | 情绪+催化+风险 |
+> **注**: 消息面维度由agent基于news_analysis.py输出覆盖调整,脚本输出7.5/15为默认中性值。
 | 估值面 | 10% | PE/PEG/基本面安全边际 |
 
 **⚠️ 市场状态动态权重调整（V2.2新增）**:
@@ -621,6 +631,10 @@ url = "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=1&po=1&np=1&fields=f
 - trending_down: 估值面权重提高(寻找安全边际)
 - sideways: 量价权重最高(波段操作靠量价)
 - volatile: 资金面权重提高(资金流向决定方向)
+
+**sector_hot定义**: 板块涨幅TOP5中出现该股所属板块,且板块内涨停家数≥3
+
+⚠️ 动态权重调整由agent根据市场状态手工执行,脚本使用固定权重。
 
 **⚠️ 资金流数据缺失时的权重重分配** (2026-07-23确立):
 当em_api.py限频导致资金流数据完全不可用时,权重重分配:
@@ -1818,7 +1832,7 @@ for (lo,hi), label in zip(bins, labels):
 需要获取的数据：
 ⚠️ 资金流向获取方式(WSL环境专用):
 Python requests库在WSL+Clash环境下无法正常访问东财push2his API(代理bug+限频)
-✅ 正确方式: 用 ~/.hermes/scripts/em_api.py 脚本(subprocess+curl直连)
+✅ 首选: 东财API直连(push2his.eastmoney.com) | 降级备选: em_api.py 脚本(subprocess+curl绕过requests代理bug)
 ```bash
 python3 ~/.hermes/scripts/em_api.py fund_flow <secid> [limit]  # 资金流
 python3 ~/.hermes/scripts/em_api.py kline <secid> [limit]      # K线(备选)
@@ -2023,9 +2037,9 @@ def check_double_needle(day1, day2):
 |--------|------|------|---------|
 | 腾讯历史K线 | ✅最稳定 | K线数据(前复权) | — |
 | 腾讯实时行情 | ✅稳定 | 实时报价/PE/PB | — |
-| em_api.py(东财) | ✅可靠(限频) | 资金流向/概念板块 | 等5秒重试,3次失败则跳过 |
+| 东财API直连(push2his) | ✅首选 | 资金流向/概念板块 | em_api.py降级备选 |
 | 同花顺直连 | ✅稳定 | 消息面/基本面 | UA必带 |
-| 东财push2his | ❌WSL不可用 | 用em_api.py替代 | em_api.py |
+| em_api.py(东财降级) | ✅可靠(限频) | 资金流向/概念板块(备选) | 等5秒重试,3次失败则跳过 |
 | 东财reportapi | ⚠️间歇500 | web_search替代 | web_search |
 | mootdx(TCP) bars() | ⚠️盘后不可用 | 东财K线API替代 | 东财K线API |
 | 巨潮公告 | ✅可用 | 公司公告 | 不传market参数 |
@@ -2038,7 +2052,7 @@ K线数据 → 腾讯API(web.ifzq.gtimg.cn) ← 最可靠,无代理问题
   url = f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={prefix}{code},day,,,30,qfq"
   prefix: sh(沪市)/sz(深市)
 
-资金流向(首选) → em_api.py(~/.hermes/scripts/em_api.py) ← subprocess+curl绕过requests代理bug
+资金流向(首选) → 东财API直连(push2his.eastmoney.com) ← deep_analysis.py fetch_eastmoney_fund_flow()
   python3 ~/.hermes/scripts/em_api.py fund_flow <secid> [limit]
   ⚠️ 限频: 请求间隔>=5秒,批量7-10秒
 
@@ -2057,7 +2071,13 @@ K线数据 → 腾讯API(web.ifzq.gtimg.cn) ← 最可靠,无代理问题
 
 ## References
 
-- `references/daily_stock_analysis_framework.md` — daily_stock_analysis 16个策略YAML详情+评分体系+大盘复盘框架
+### 报告模板(templates/)
+
+templates/包含3个报告模板: stock_report.md(个股分析), comparison.md(对比分析), market_review.md(大盘复盘)。Agent撰写报告时参考对应模板。
+
+### 参考文档
+
+- `references/daily_stock_analysis_framework.md` — daily_stock_analysis 15个策略YAML详情+评分体系+大盘复盘框架
 - `references/serenity-bottleneck-framework.md` — Serenity瓶颈投资法A股应用: 五因子模型+物理AI产业链瓶颈地图
 - `references/mlcc-sector-mapping.md` — MLCC A股产业链图谱: 上游材料/中游制造分层+凯盛科技MLCC业务详情+替代标的
 - `references/tgv-glass-substrate-map.md` — 半导体TGV玻璃基板A股产业链图谱: 量产/中试/蹭概念分档+核心公司
