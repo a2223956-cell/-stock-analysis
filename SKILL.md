@@ -3,7 +3,7 @@ name: stock-analysis
 display_name: 股票综合分析框架
 description: "融合Hermes量价分析体系+daily_stock_analysis多Agent策略框架的统一分析方法论。覆盖个股深度分析、大盘复盘、加仓决策。"
 category: finance
-version: "3.0.0"
+version: "3.1.0"
 updated: "2026-07-27"
 ---
 
@@ -28,6 +28,23 @@ updated: "2026-07-27"
 ---
 
 ## 二、分析流程（9步法）
+
+### 数据采集脚本
+
+深度分析数据采集器: `scripts/deep_analysis.py`
+
+```bash
+# 10步模板数据采集(输出JSON)
+~/.venv/bin/python3 scripts/deep_analysis.py <股票代码> [名称]
+# 输出: /tmp/deep_analysis_<code>.json
+```
+
+脚本强制执行10步数据采集:
+1.核心数据速览 2.历史复盘 3.市场环境 4.量价关系 5.资金流向
+6.均线技术 7.估值基本面 8.综合评分 9.风险提示 10.附录
+
+⚠️ 每次深度分析必须先运行此脚本,禁止跳步。
+
 
 **⚠️ 执行前置要求: 接到分析任务后，第一步必须告知用户将调用哪些skill，再开始执行。例如: "计划调用的skill: 1.stock-analysis 2.a-stock-data 3.mx-moni"。用户明确要求每次做事前先看到skill列表。**
 **简化规则**: 同一会话中首次分析必须完整列出skill列表；后续分析(同一会话内)若skill无变化，可简写为"继续调用stock-analysis + a-stock-data + mx-moni"或省略（已在上下文中）。见2026-07-14实测。
