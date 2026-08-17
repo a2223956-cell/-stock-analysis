@@ -1,13 +1,13 @@
 ---
 name: stock-analysis
-display_name: 股票综合分析框架
-description: "融合Hermes量价分析体系+daily_stock_analysis多Agent策略框架的统一分析方法论。覆盖个股深度分析、大盘复盘、加仓决策。"
+display_name: 股票综合分析框架 V5
+description: "脚本强制采集+agent纯分析+校验闭环。deep_analysis.py 15步数据采集, validate_report.py 11项校验。覆盖个股深度分析、大盘复盘、加仓决策。"
 category: finance
-version: "3.1.0"
-updated: "2026-07-27"
+version: "5.0.0"
+updated: "2026-08-17"
 ---
 
-# 股票综合分析框架 V3.1.0
+# 股票综合分析框架 V5.0
 
 > 融合两套系统精华：
 > - Hermes量价分析：深度K线量价关系解读、5源新闻情绪、主力行为逐K线追踪
